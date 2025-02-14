@@ -1,5 +1,5 @@
 #include <iostream>
-#include "algorithms/base.h"
+#include "algorithms/serial/base.h"
 
 int main() {
     std::vector<std::vector<int>> A = {{1, 2}, {3, 4}};
