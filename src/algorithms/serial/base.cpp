@@ -1,28 +1,26 @@
 #include "base.h"
 #include <stdexcept>  // For handling errors (if needed)
 
-void BaseMatrix::multiply(const std::vector<std::vector<int>>& A,
-                          const std::vector<std::vector<int>>& B,
-                          std::vector<std::vector<int>>& C) {
-    int rowsA = A.size();
-    int colsA = A[0].size();
-    int rowsB = B.size();
-    int colsB = B[0].size();
+void multiplyMatrices(vector<vector<int>>& m1, vector<vector<int>>& m2, vector<vector<int>>& res) {
+    int r1 = m1.size();
+    int c1 = m1[0].size();
+    int r2 = m2.size();
+    int c2 = m2[0].size();
 
-    // Ensure matrix dimensions are compatible for multiplication
-    if (colsA != rowsB) {
-        throw std::invalid_argument("Matrix dimensions do not match for multiplication");
+    if (c1 != r2) {
+        cout << "Invalid Input" << endl;
+        exit(EXIT_FAILURE);
     }
 
-    // Resize C to correct dimensions
-    C.assign(rowsA, std::vector<int>(colsB, 0));
+    // Resize result matrix to fit the result dimensions
+    res.resize(r1, vector<int>(c2, 0)); 
 
-    // Naive O(n³) matrix multiplication
-    for (int i = 0; i < rowsA; ++i) {
-        for (int j = 0; j < colsB; ++j) {
-            for (int k = 0; k < colsA; ++k) {
-                C[i][j] += A[i][k] * B[k][j];
+    for (int i = 0; i < r1; i++) {
+        for (int j = 0; j < c2; j++) {
+            for (int k = 0; k < c1; k++) {
+                res[i][j] += m1[i][k] * m2[k][j];
             }
         }
     }
 }
+
