@@ -1,0 +1,9 @@
+mpicc -g -Wall -o mpi_base mpi_base.c -std=c99
+
+gcc -g -Wall -fopenmp -o omp_base omp_base.c -std=c99
+
+module load mpich-3.2
+
+qstat -u $USER
+qsub
+qdel
