@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "utils.h"
+#include "../../../include/utils.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 int main(int argc, char** argv) {
-    int i, j, k;
     int tid, nthreads;
     int matrix_size;
     int **A, **B, **C;
@@ -24,7 +23,7 @@ int main(int argc, char** argv) {
     omp_set_num_threads(nthreads);
 
     #ifdef _OPENMP
-    #pragma omp parallel shared(A, B, C, A_data, B_data, C_data, nthreads, start_time, end_time, others_time) private(tid, i, j, k) 
+    #pragma omp parallel shared(A, B, C, A_data, B_data, C_data, nthreads, start_time, end_time, others_time) private(tid) 
     #endif
     {
         tid = omp_get_thread_num();

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include "utils.h"
+#include "../../../include/utils.h"
 
 int main(int argc, char** argv) {
     int rank, comm_sz;
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
     if (rank == 0) {
         end_time = MPI_Wtime();
         total_time = end_time - start_time;
-        printf("%lf ", total_time);
+        printf("%lf\n", total_time);
     }
 
     MPI_Finalize();
