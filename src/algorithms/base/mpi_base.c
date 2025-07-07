@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     srand(1);
 
     /* get matrix size */
-    matrix_size = 1024;
+    matrix_size = 4096;
 
     /* calculate the strip size */
     rows_per_process = matrix_size / comm_sz;
@@ -145,11 +145,17 @@ int main(int argc, char** argv) {
         FILE *fp = fopen(filename, "a");
         if (fp != NULL){
             fprintf(fp,
-                "%s,%d,%d,1,%.3f\n",
-                "base_mpi",            // algorithm
+                "%s,%d,%d,1,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+                "base_mpi",               // algorithm
                 n,                        // matrix dimension
-                world_size,               // process numbers
-                end - start_tot,          // total time
+                world_size,               // nr of processes
+                total_time,               // total time
+                cpu_time_computation,     // total computation time
+                cpu_time_multiplying,     // comp. multiplication time
+                cpu_time_generation,      // generation time
+                comms_time_total,         // total communication time
+                comms_time_dist,          // comm. distribuzione time
+                comms_time_aggr,          // comm. aggregation time
             );
             fclose(fp);
         }

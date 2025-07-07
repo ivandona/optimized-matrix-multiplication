@@ -74,8 +74,9 @@ for script in "${sequential_scripts[@]}"; do
     base=$(basename "$script" .c)
     exec_name="${base}"
     output_path="$bin_dir/$exec_name"
-    # mpicc -g -Wall -o "$output_path" "$script"
-    # generate_job "$exec_name" "$output_path" 1 1 "SEQ" "$res_dir"
+    echo "$script"
+    mpicc -g -Wall -o "$output_path" "$script"
+    generate_job "$exec_name" "$output_path" 1 1 "SEQ" "$res_dir"
 done
 
 # Launch parallel jobs
@@ -89,16 +90,16 @@ for N in "${total_cores_list[@]}"; do
                 base=$(basename "$script" .c)
                 exec_name="${base}_N${N}_p${i}_t${ncpus}"
                 output_path="$bin_dir/$exec_name"
-                # mpicc -g -Wall -fopenmp -o "$output_path" "$script"
-                # generate_job "$exec_name" "$output_path" $i $N "OMP" "$res_dir"
+                mpicc -g -Wall -fopenmp -o "$output_path" "$script"
+                generate_job "$exec_name" "$output_path" $i $N "OMP" "$res_dir"
             done
         elif [ $i -eq $N ]; then
             for script in "${mpi_scripts[@]}"; do
                 base=$(basename "$script" .c)
                 exec_name="${base}_N${N}_p${i}_t${ncpus}"
                 output_path="$bin_dir/$exec_name"
-                # mpicc -g -Wall -o "$output_path" "$script"
-                # generate_job "$exec_name" "$output_path" $i $N "MPI" "$res_dir"
+                mpicc -g -Wall -o "$output_path" "$script"
+                generate_job "$exec_name" "$output_path" $i $N "MPI" "$res_dir"
             done
         elif [ $i -eq 2 ]; then
             for script in "${hybrid_scripts[@]}"; do

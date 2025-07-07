@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     int startNode = 0;                              // first of 7 MPI nodes for 
     
     // Set matrix dimension and max element size
-    dim = atoi(argv[1]);
+    dim = 4096;
     maxInt = 1000;
     
     // Initialize matrices

@@ -35,8 +35,8 @@ int main(int argc, char* argv[])
      double endTime;                                 // end of matrix mult
 
      // Set matrix dimension and max element size
-     dim = stoi(argv[1]);
-     maxInt = stoi(argv[2]);
+     dim = 4096;
+     maxInt = 1000;
 
 
      // Initialize matrices

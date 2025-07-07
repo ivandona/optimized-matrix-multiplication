@@ -76,15 +76,19 @@ int main(int argc, char** argv) {
     int matrix_size;
     double **A, **B, **C;
     double *A_data, *B_data, *C_data;
-    clock_t start_time, end_time;
+    clock_t start_time, end_time, start_init;
     double total_time;
+    double cpu_time_generation;
+    double cpu_time_computation;
+    double cpu_time_multiplying;
 
-    start_time = clock();
+    start_init = clock();
 
     srand(1);
 
-    matrix_size = atoi(argv[1]);
+    matrix_size = 4096;
 
+    start_time = clock();
     /* allocate and fill matrix A */
     alloc_matrix(&A, &A_data, matrix_size, matrix_size);
     generate_random_matrix(A, matrix_size, 0, 100);
@@ -96,8 +100,13 @@ int main(int argc, char** argv) {
     /* allocate matrix C (results matrix) */
     alloc_matrix(&C, &C_data, matrix_size, matrix_size);
     init_matrix(C, matrix_size, matrix_size);
+    end_time = clock();
+    cpu_time_generation = (double)(end_time - start_time) / CLOCKS_PER_SEC;
 
+    start_time = clock();
     C = strassen(A, B, matrix_size);
+    end_time = clock();
+    cpu_time_computation = (double)(end_time - start_time) / CLOCKS_PER_SEC;;
 
     printf("Result:\n");
     print_matrix(C, matrix_size, matrix_size);
@@ -107,8 +116,24 @@ int main(int argc, char** argv) {
     free_matrix(C);
 
     end_time = clock();
-    total_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    total_time = (double)(end_time - start_init) / CLOCKS_PER_SEC;
     printf("%lf\n", total_time);
+
+    char filename[128];
+    snprintf(filename, sizeof(filename),"res/output_strassen_seq_%d_%d.csv", 1, 1);
+    FILE *fp = fopen(filename, "a");
+    if (fp != NULL){
+        fprintf(fp,
+            "%s,%d,1,1,%.3f,%.3f,%.3f,%.3f,0,0,0\n",
+            "strassen_seq",           // algorithm
+            n,                        // matrix dimension
+            total_time,               // total time
+            cpu_time_computation,     // total computation time
+            cpu_time_multiplying,     // comp. multiplication time
+            cpu_time_generation,      // generation time
+        );
+        fclose(fp);
+    }
 
     return 0;
 }

@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
      omp_set_nested(1);
 
      // Set matrix dimension and max element size
-     dim = stoi(argv[1]);
+     dim = 4096;
      maxInt = 1000;
 
      // Initialize matrices

@@ -16,8 +16,8 @@ int main(int argc, char** argv) {
     start_time = omp_get_wtime();
 
     /* get matrix size and thread nr*/
-    matrix_size = atoi(argv[1]);
-    nthreads = atoi(argv[2]);
+    matrix_size = 4096;
+    nthreads = atoi(argv[1]);
 
     omp_set_dynamic(0);     // Explicitly disable dynamic teams
     omp_set_num_threads(nthreads);
@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
     printf("Calculation time: %lf\n", calculation_time);
     printf("Totale time: %lf\n", total_time);
 
+    // Writing timing into CSV file
     char filename[128];
     if(argc==2){
         snprintf(filename, sizeof(filename),"res/%s/output_base_omp_%d_%d.csv", argv[2], 1, nthreads);
@@ -68,11 +69,14 @@ int main(int argc, char** argv) {
     FILE *fp = fopen(filename, "a");
     if (fp != NULL){
         fprintf(fp,
-            "%s,%d,1,%d,%.3f\n",
-            "base_omp",          // algorithm
-            n,                      // matrix dimension
-            nthreads,               // thread numbers
-            total_time,             // total time
+            "%s,%d,1,%d,%.3f,%.3f,%.3f,%.3f,0,0,0\n",
+            "base_mpi",               // algorithm
+            n,                        // matrix dimension
+            nthreads,                 // nr of threads
+            total_time,               // total time
+            cpu_time_computation,     // total computation time
+            cpu_time_multiplying,     // comp. multiplication time
+            others_time,      // generation time
         );
         fclose(fp);
     }

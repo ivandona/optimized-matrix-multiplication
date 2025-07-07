@@ -30,8 +30,8 @@ int main(int argc, char** argv) {
     srand(1);
 
     /* get matrix size */
-    matrix_size = atoi(argv[1]);
-    nthreads = atoi(argv[2]);
+    matrix_size = 4096;
+    nthreads = atoi(argv[1]);
 
     /* calculate the strip size */
     rows_per_process = matrix_size / comm_sz;
@@ -143,8 +143,34 @@ int main(int argc, char** argv) {
         end_tot = MPI_Wtime();
         total_time = end_tot - start_tot;
         printf("%lf\n", total_time);
+        
+        // Writing timing into CSV file
+        char filename[128];
+        if(argc==2){
+            snprintf(filename, sizeof(filename),"res/%s/output_base_hyb_%d_%d.csv", argv[2], world_size, nthreads);
+        }
+        else snprintf(filename, sizeof(filename),"res/output_base_hyb_%d_%d.csv", world_size, nthreads);
+        FILE *fp = fopen(filename, "a");
+        if (fp != NULL){
+            fprintf(fp,
+                "%s,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+                "base_hyb",               // algorithm
+                n,                        // matrix dimension
+                world_size,               // nr of processes
+                nthreads,                 // nr of threads
+                total_time,               // total time
+                cpu_time_computation,     // total computation time
+                cpu_time_multiplying,     // comp. multiplication time
+                others_time,              // generation time
+                comms_time_total,         // total communication time
+                comms_time_dist,          // comm. distribuzione time
+                comms_time_aggr,          // comm. aggregation time
+            );
+            fclose(fp);
+        }
     }
 
+    
     MPI_Finalize();
     return 0;
 }
