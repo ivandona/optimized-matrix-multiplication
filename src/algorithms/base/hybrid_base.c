@@ -10,10 +10,12 @@
 int main(int argc, char** argv) {
     int rank, comm_sz, nthreads;
     int rows_per_process, matrix_size;
-    int sum;
-    int **A, **B, **C, **strip_A, **strip_C;
-    int *A_data, *B_data, *C_data, *strip_A_data, *strip_C_data;
-    double start_time, end_time, total_time;
+    double sum;
+    double **A, **B, **C, **strip_A, **strip_C;
+    double *A_data, *B_data, *C_data, *strip_A_data, *strip_C_data;
+    double start_time, end_time, start_tot, end_tot, total_time;
+    double cpu_time_generation, cpu_time_computation, cpu_time_multiplying;
+    double comms_time_total, comms_time_dist, comms_time_aggr;
     MPI_Datatype matrix, strip;
 
     MPI_Init(&argc,&argv);
@@ -22,7 +24,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD,&comm_sz);
 
     if (rank == 0) {
-        start_time = MPI_Wtime();
+        start_tot = MPI_Wtime();
     }
 
     srand(1);
@@ -43,6 +45,7 @@ int main(int argc, char** argv) {
     MPI_Type_commit(&matrix);
 
     if(rank == 0) {
+        start_time = MPI_Wtime();
         /* allocate and fill matrix A */
         alloc_matrix(&A, &A_data, matrix_size, matrix_size);
         generate_random_matrix(A, matrix_size, 0, 100);
@@ -55,6 +58,8 @@ int main(int argc, char** argv) {
     alloc_matrix(&B, &B_data, matrix_size, matrix_size);
     if(rank == 0) {
         generate_random_matrix(B, matrix_size, 0, 100);
+        end_time = MPI_Wtime();
+        cpu_time_generation = end_time - start_time;
     }
 
     /* allocate sub-matrices */
@@ -62,11 +67,20 @@ int main(int argc, char** argv) {
     alloc_matrix(&strip_C, &strip_C_data, rows_per_process, matrix_size);
     init_matrix(strip_C, rows_per_process, matrix_size);
 
+    if (rank == 0)
+        start_time = MPI_Wtime();
     /* scatter matrix A to all processes */
     MPI_Scatter(A_data, 1, strip, &(strip_A[0][0]), 1, strip, 0, MPI_COMM_WORLD);
 
     // broadcast matrix B to all processes
     MPI_Bcast(B_data, 1, matrix, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        comms_data_distribution = end_time - start_time;
+
+        // Start time for matrix multiplication
+        start_time = MPI_Wtime();
+    }
 
     omp_set_dynamic(0);     // Explicitly disable dynamic teams
     omp_set_num_threads(nthreads);
@@ -80,13 +94,28 @@ int main(int argc, char** argv) {
             }
             strip_C[i][j] = sum;
         }
-    }    
+    }
+    
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        cpu_time_multiplying = end_time - start_time;
+
+        cpu_time_computation = cpu_time_generation + cpu_time_multiplying;
+    }
 
     //print_matrix(strip_C, rows_per_process, matrix_size);
 
+    if (rank == 0)
+        start_time = MPI_Wtime();
     // gather results
     MPI_Gather(&(strip_C[0][0]), 1, strip, C_data, 1, strip, 0, MPI_COMM_WORLD);
-    
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        comms_data_aggregation = end_time - start_time;
+
+        comms_time_total = comms_data_distribution + comms_data_aggregation;
+    }
+
     /* if(rank == 0) {
         print_matrix(C, matrix_size, matrix_size);
     } */
@@ -111,8 +140,8 @@ int main(int argc, char** argv) {
     free(B);
 
     if (rank == 0) {
-        end_time = MPI_Wtime();
-        total_time = end_time - start_time;
+        end_tot = MPI_Wtime();
+        total_time = end_tot - start_tot;
         printf("%lf\n", total_time);
     }
 

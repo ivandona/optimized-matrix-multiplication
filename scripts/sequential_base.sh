@@ -8,4 +8,4 @@
 # Load the MPI module
 module load mpich-3.2
 
-mpirun.actual -n 4 ./optimized-matrix-multiplication/build/bin/algorithms/base/sequential_base 1024
+mpirun.actual -n 1 ./optimized-matrix-multiplication/build/bin/algorithms/base/sequential_base 1024

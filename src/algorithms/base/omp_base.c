@@ -9,8 +9,8 @@
 int main(int argc, char** argv) {
     int tid, nthreads;
     int matrix_size;
-    int **A, **B, **C;
-    int *A_data, *B_data, *C_data;
+    double **A, **B, **C;
+    double *A_data, *B_data, *C_data;
     double start_time, end_time, others_time, calculation_time, total_time;
 
     start_time = omp_get_wtime();
@@ -60,4 +60,20 @@ int main(int argc, char** argv) {
     printf("Calculation time: %lf\n", calculation_time);
     printf("Totale time: %lf\n", total_time);
 
+    char filename[128];
+    if(argc==2){
+        snprintf(filename, sizeof(filename),"res/%s/output_base_omp_%d_%d.csv", argv[2], 1, nthreads);
+    }
+    else snprintf(filename, sizeof(filename),"res/output_base_omp_%d_%d.csv", 1, nthreads);
+    FILE *fp = fopen(filename, "a");
+    if (fp != NULL){
+        fprintf(fp,
+            "%s,%d,1,%d,%.3f\n",
+            "base_omp",          // algorithm
+            n,                      // matrix dimension
+            nthreads,               // thread numbers
+            total_time,             // total time
+        );
+        fclose(fp);
+    }
 }

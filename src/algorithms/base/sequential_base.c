@@ -5,8 +5,8 @@
 
 int main(int argc, char** argv) {
     int matrix_size;
-    int **A, **B, **C;
-    int *A_data, *B_data, *C_data;
+    double **A, **B, **C;
+    double *A_data, *B_data, *C_data;
     clock_t start_time, end_time;
     double total_time;
 
@@ -56,6 +56,19 @@ int main(int argc, char** argv) {
     end_time = clock();
     total_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
     printf("%lf\n", total_time);
+
+    char filename[128];
+    snprintf(filename, sizeof(filename),"res/output_base_seq_%d_%d.csv", 1, 1);
+    FILE *fp = fopen(filename, "a");
+    if (fp != NULL){
+        fprintf(fp,
+            "%s,%d,1,1,%.3f\n",
+            "base_seq",              // algorithm
+            n,                        // matrix dimension
+            total_time,               // total time
+        );
+        fclose(fp);
+    }
 
     return 0;
 }

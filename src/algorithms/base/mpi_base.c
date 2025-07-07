@@ -6,10 +6,12 @@
 int main(int argc, char** argv) {
     int rank, comm_sz;
     int rows_per_process, matrix_size;
-    int sum;
-    int **A, **B, **C, **strip_A, **strip_C;
-    int *A_data, *B_data, *C_data, *strip_A_data, *strip_C_data;
-    double start_time, end_time, total_time;
+    double sum;
+    double **A, **B, **C, **strip_A, **strip_C;
+    double *A_data, *B_data, *C_data, *strip_A_data, *strip_C_data;
+    double start_time, end_time, start_tot, end_tot, total_time;
+    double cpu_time_generation, cpu_time_computation, cpu_time_multiplying;
+    double comms_time_total, comms_time_dist, comms_time_aggr;
     MPI_Datatype matrix, strip;
 
     MPI_Init(&argc,&argv);
@@ -18,13 +20,13 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD,&comm_sz);
 
     if (rank == 0) {
-        start_time = MPI_Wtime();
+        start_tot = MPI_Wtime();
     }
 
     srand(1);
 
     /* get matrix size */
-    matrix_size = atoi(argv[1]);
+    matrix_size = 1024;
 
     /* calculate the strip size */
     rows_per_process = matrix_size / comm_sz;
@@ -37,7 +39,9 @@ int main(int argc, char** argv) {
     MPI_Type_vector(matrix_size, matrix_size, matrix_size, MPI_INT, &matrix);
     MPI_Type_commit(&matrix);
 
+    
     if(rank == 0) {
+        start_time = MPI_Wtime();
         /* allocate and fill matrix A */
         alloc_matrix(&A, &A_data, matrix_size, matrix_size);
         generate_random_matrix(A, matrix_size, 0, 100);
@@ -50,19 +54,30 @@ int main(int argc, char** argv) {
     alloc_matrix(&B, &B_data, matrix_size, matrix_size);
     if(rank == 0) {
         generate_random_matrix(B, matrix_size, 0, 100);
+        end_time = MPI_Wtime();
+        cpu_time_generation = end_time - start_time;
     }
 
     /* allocate sub-matrices */
     alloc_matrix(&strip_A, &strip_A_data, rows_per_process, matrix_size);
     alloc_matrix(&strip_C, &strip_C_data, rows_per_process, matrix_size);
     init_matrix(strip_C, rows_per_process, matrix_size);
-
+    
+    if (rank == 0)
+        start_time = MPI_Wtime();
     /* scatter matrix A to all processes */
     MPI_Scatter(A_data, 1, strip, &(strip_A[0][0]), 1, strip, 0, MPI_COMM_WORLD);
 
     // broadcast matrix B to all processes
     MPI_Bcast(B_data, 1, matrix, 0, MPI_COMM_WORLD);
-    
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        comms_data_distribution = end_time - start_time;
+
+        // Start time for matrix multiplication
+        start_time = MPI_Wtime();
+    }
+
     for (int i = 0; i < rows_per_process; i++) {
         for (int j = 0; j < matrix_size; j++) {
             sum = 0;
@@ -71,12 +86,27 @@ int main(int argc, char** argv) {
             }
             strip_C[i][j] = sum;
         }
-    }    
+    }
+    
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        cpu_time_multiplying = end_time - start_time;
+
+        cpu_time_computation = cpu_time_generation + cpu_time_multiplying;
+    }
 
     //print_matrix(strip_C, rows_per_process, matrix_size);
-
+    
+    if (rank == 0)
+        start_time = MPI_Wtime();
     // gather results
     MPI_Gather(&(strip_C[0][0]), 1, strip, C_data, 1, strip, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        end_time = MPI_Wtime();
+        comms_data_aggregation = end_time - start_time;
+
+        comms_time_total = comms_data_distribution + comms_data_aggregation;
+    }
     
     /* if(rank == 0) {
         print_matrix(C, matrix_size, matrix_size);
@@ -102,9 +132,27 @@ int main(int argc, char** argv) {
     free(B);
 
     if (rank == 0) {
-        end_time = MPI_Wtime();
-        total_time = end_time - start_time;
+        end_tot = MPI_Wtime();
+        total_time = end_tot - start_tot;
         printf("%lf\n", total_time);
+
+        // Write timings into CSV file
+        char filename[128];
+        if(argc==2){
+            snprintf(filename, sizeof(filename),"res/%s/output_base_mpi_%d_%d.csv", argv[1], world_size, 1);
+        }
+        else snprintf(filename, sizeof(filename),"res/output_base_mpi_%d_%d.csv", world_size, 1);
+        FILE *fp = fopen(filename, "a");
+        if (fp != NULL){
+            fprintf(fp,
+                "%s,%d,%d,1,%.3f\n",
+                "base_mpi",            // algorithm
+                n,                        // matrix dimension
+                world_size,               // process numbers
+                end - start_tot,          // total time
+            );
+            fclose(fp);
+        }
     }
 
     MPI_Finalize();
